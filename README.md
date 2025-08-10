@@ -4,6 +4,10 @@
 
 The Real-time Camera Pinch Draw App is a browser-based tool that lets you draw directly on a live camera feed using only your hand gestures. It uses your device’s camera and real-time hand tracking to detect when you pinch your thumb and index finger together — starting a brush stroke. Opening your hand stops drawing. The camera feed is mirrored like a selfie for a natural, intuitive experience.
 
+## Live Demo
+
+**Check it out here:** [https://jeshadr.github.io/PinchDraw/](https://jeshadr.github.io/PinchDraw/)
+
 ## Features
 
 * **Real-time Hand Tracking:** Displays a mirrored skeleton overlay of your hand.
