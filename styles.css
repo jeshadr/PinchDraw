@@ -1,0 +1,147 @@
+:root { --bg:#0f1115; --panel:#171923; --text:#e6e8f0; --sub:#98a2b3; --accent:#6ea8fe; --ring:rgba(110,168,254,.35); }
+*{box-sizing:border-box}
+html,body{height:100%;margin:0;background:var(--bg);color:var(--text);font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial}
+
+.app{display:grid;grid-template-rows:auto 1fr auto;min-height:100svh}
+header{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:var(--panel);border-bottom:1px solid #232633}
+header h1{font-size:16px;margin:0;letter-spacing:.2px;font-weight:600}
+header .right{display:flex;gap:8px;align-items:center}
+
+.surface{position:relative;width:100%;height:100%;overflow:hidden;background:#000}
+
+/* Host box for video + overlay canvases, centered at 70% width */
+.mirror{
+  position:absolute; inset:0;
+  width:70%; height:100%;
+  margin:0 auto;
+  display:grid; place-items:center;
+  transform:scaleX(-1);         /* flip video and overlays together */
+}
+
+/* Children fill the mirror box exactly */
+video, canvas{width:100%;height:100%;object-fit:cover}
+
+#video{filter:none !important;background:transparent !important}
+#overlay,#paint{position:absolute;inset:0;pointer-events:none;background:transparent !important;border:none !important}
+
+.diag{position:absolute;bottom:12px;left:12px;z-index:6;background:transparent !important;border:none !important;border-radius:12px;padding:0 0;font-size:12px;color:#d1d6e0}
+.toast{position:fixed;bottom:16px;right:16px;background:#10131a;border:1px solid #2a2e3d;padding:10px 12px;border-radius:12px;font-size:12px;z-index:20;display:none}
+.toast.show{display:block}
+#tracker{position:absolute;right:12px;bottom:60px;z-index:7;border:none !important;background:transparent !important}
+
+.controls{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:10px;padding:10px;background:var(--panel);border-top:1px solid #232633}
+.card{background:#11131a;border:1px solid #222533;border-radius:14px;padding:12px}
+.card h3{margin:0 0 8px 0;font-size:13px;color:var(--sub);font-weight:600}
+.row{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center}
+.row+.row{margin-top:8px}
+input[type=range]{width:100%}
+input[type=color]{width:44px;height:30px;padding:0;border:1px solid #2a2e3d;background:#0c0e13;border-radius:8px}
+button,select{appearance:none;border:1px solid #2a2e3d;color:var(--text);background:#0c0e13;border-radius:10px;padding:8px 12px;font:inherit;cursor:pointer}
+button:hover{border-color:#3a3f52}
+button.primary{background:#1a2233;border-color:#2a3a55}
+button.ghost{background:transparent}
+
+.status{position:absolute;left:12px;top:12px;z-index:6;padding:6px 10px;border-radius:999px;font-size:12px;color:#d1d6e0;background:transparent !important}
+.legend{position:absolute;right:12px;top:12px;z-index:6;font-size:12px;color:#c8cfdb;background:transparent !important}
+.cursorDot{position:absolute;width:14px;height:14px;border-radius:999px;background:var(--accent);box-shadow:0 0 0 6px var(--ring);transform:translate(-50%,-50%);pointer-events:none;z-index:6}
+
+.gate{position:absolute;inset:0;background:transparent;display:none;place-items:center;z-index:10}
+.gate .panel{width:min(680px,92vw);background:#11131a;border:1px solid #2a2e3d;border-radius:16px;padding:18px}
+.gate h2{margin:0 0 8px 0;font-size:18px}
+.gate p{margin:6px 0;color:var(--sub);font-size:14px}
+
+/* Tutorial Popup */
+.tutorial-popup{
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,0.8);
+  backdrop-filter:blur(4px);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  z-index:1000;
+  padding:20px;
+}
+
+.tutorial-content{
+  background:var(--panel);
+  border:1px solid #2a2e3d;
+  border-radius:20px;
+  max-width:600px;
+  width:100%;
+  max-height:80vh;
+  overflow-y:auto;
+  box-shadow:0 20px 40px rgba(0,0,0,0.3);
+}
+
+.tutorial-header{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:24px 24px 16px 24px;
+  border-bottom:1px solid #2a2e3d;
+}
+
+.tutorial-header h2{
+  margin:0;
+  font-size:24px;
+  color:var(--text);
+}
+
+.close-btn{
+  background:none;
+  border:none;
+  color:var(--sub);
+  font-size:28px;
+  cursor:pointer;
+  padding:0;
+  width:32px;
+  height:32px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  border-radius:50%;
+  transition:background-color 0.2s;
+}
+
+.close-btn:hover{
+  background:rgba(255,255,255,0.1);
+  color:var(--text);
+}
+
+.tutorial-body{
+  padding:24px;
+}
+
+.tutorial-body h3{
+  margin:0 0 16px 0;
+  font-size:18px;
+  color:var(--text);
+}
+
+.tutorial-body ol,
+.tutorial-body ul{
+  margin:0 0 20px 0;
+  padding-left:20px;
+  color:var(--text);
+  line-height:1.6;
+}
+
+.tutorial-body li{
+  margin-bottom:8px;
+}
+
+.tutorial-body strong{
+  color:var(--accent);
+}
+
+.tutorial-footer{
+  text-align:center;
+  padding-top:16px;
+  border-top:1px solid #2a2e3d;
+}
+
+.tutorial-footer .primary{
+  padding:12px 24px;
+  font-size:16px;
+}

@@ -4,48 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>PinchDraw — Camera Hand Drawing</title>
-  <style>
-    :root { --bg:#0f1115; --panel:#171923; --text:#e6e8f0; --sub:#98a2b3; --accent:#6ea8fe; --ring:rgba(110,168,254,.35); }
-    *{box-sizing:border-box}
-    html,body{height:100%;margin:0;background:var(--bg);color:var(--text);font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial}
-    .app{display:grid;grid-template-rows:auto 1fr auto;height:100vh;gap:8px}
-    header{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:var(--panel);border-bottom:1px solid #232633}
-    header h1{font-size:16px;margin:0;letter-spacing:.2px;font-weight:600}
-    header .right{display:flex;gap:8px;align-items:center}
-    .surface{position:relative;width:100%;height:100%;overflow:hidden;background:#000}
-    .mirror{position:absolute;inset:0;display:grid;place-items:center;transform:scaleX(-1)}
-    video,canvas{width:100%;height:100%;object-fit:cover}
-    /* camera must be clean, no haze */
-    #video{filter:none !important;background:transparent !important}
-    /* make drawing and overlay canvases completely transparent */
-    #overlay,#paint,canvas#overlay,canvas#paint{position:absolute;inset:0;pointer-events:none;background:transparent !important;box-shadow:none !important;border:none !important}
-    /* UI chips transparent too */
-    .status,.legend{background:transparent !important;border:none !important;box-shadow:none !important}
-    /* diagnostics and tracker also fully transparent so nothing tints the camera */
-    .diag{position:absolute;bottom:12px;left:12px;z-index:6;background:transparent !important;border:none !important;border-radius:12px;padding:0 0;font-size:12px;color:#d1d6e0}
-    .diag code{color:#d1d6e0}
-    .toast{position:fixed;bottom:16px;right:16px;background:#10131a;border:1px solid #2a2e3d;padding:10px 12px;border-radius:12px;font-size:12px;z-index:20;display:none}
-    .toast.show{display:block}
-    #tracker{position:absolute;right:12px;bottom:60px;z-index:7;border:none !important;background:transparent !important}
-    .controls{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:10px;padding:10px;background:var(--panel);border-top:1px solid #232633}
-    .card{background:#11131a;border:1px solid #222533;border-radius:14px;padding:12px}
-    .card h3{margin:0 0 8px 0;font-size:13px;color:var(--sub);font-weight:600}
-    .row{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center}
-    .row+.row{margin-top:8px}
-    input[type=range]{width:100%}
-    input[type=color]{width:44px;height:30px;padding:0;border:1px solid #2a2e3d;background:#0c0e13;border-radius:8px}
-    button,select{appearance:none;border:1px solid #2a2e3d;color:var(--text);background:#0c0e13;border-radius:10px;padding:8px 12px;font:inherit;cursor:pointer}
-    button:hover{border-color:#3a3f52}
-    button.primary{background:#1a2233;border-color:#2a3a55}
-    button.ghost{background:transparent}
-    .status{position:absolute;left:12px;top:12px;z-index:6;padding:6px 10px;border-radius:999px;font-size:12px;color:#d1d6e0}
-    .cursorDot{position:absolute;width:14px;height:14px;border-radius:999px;background:var(--accent);box-shadow:0 0 0 6px var(--ring);transform:translate(-50%,-50%);pointer-events:none;z-index:6}
-    .legend{position:absolute;right:12px;top:12px;font-size:12px;color:#c8cfdb;border-radius:10px;padding:6px 10px;z-index:6}
-    .gate{position:absolute;inset:0;background:transparent;display:none;place-items:center;z-index:10}
-    .gate .panel{width:min(680px,92vw);background:#11131a;border:1px solid #2a2e3d;border-radius:16px;padding:18px}
-    .gate h2{margin:0 0 8px 0;font-size:18px}
-    .gate p{margin:6px 0;color:var(--sub);font-size:14px}
-  </style>
+  <link rel="stylesheet" href="styles.css">
 </head>
 <body>
   <div class="app">
@@ -66,7 +25,8 @@
       <div class="status" id="status">Waiting…</div>
       <div class="legend">Pinch to draw. Open hand to stop.</div>
       <div class="cursorDot" id="cursor" style="opacity:0"></div>
-      <div class="mirror">
+
+      <div class="mirror" id="mirror">
         <video id="video" playsinline muted></video>
         <canvas id="overlay"></canvas>
         <canvas id="paint"></canvas>
@@ -90,8 +50,38 @@
 
       <canvas id="tracker" width="240" height="170"></canvas>
 
-      <div class="diag" id="diag">secure:<code id="isSecure">?</code> perm:<code id="perm">?</code> facing:<code id="facing">user</code></div>
       <div class="toast" id="toast"></div>
+      
+      <!-- Tutorial Popup -->
+      <div id="tutorialPopup" class="tutorial-popup">
+        <div class="tutorial-content">
+          <div class="tutorial-header">
+            <h2>Welcome to PinchDraw!</h2>
+            <button id="closeTutorial" class="close-btn">&times;</button>
+          </div>
+          <div class="tutorial-body">
+            <h3>How to Use:</h3>
+            <ol>
+              <li>Click <strong>Start Camera</strong> and allow camera access when prompted</li>
+              <li>Keep your hand visible to the camera</li>
+              <li><strong>Pinch</strong> your thumb and index finger together to start drawing</li>
+              <li><strong>Open</strong> your hand to stop drawing</li>
+              <li>Adjust brush color, size, and sensitivity in the controls below</li>
+            </ol>
+            
+            <h3>Features:</h3>
+            <ul>
+              <li>Real-time hand tracking with skeleton overlay</li>
+              <li>Pinch-to-draw gesture control</li>
+              <li>Customizable brush settings</li>
+            </ul>
+            
+            <div class="tutorial-footer">
+              <button id="startTutorial" class="primary">Get Started</button>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
 
     <section class="controls">
@@ -109,8 +99,8 @@
       <div class="card">
         <h3>Control</h3>
         <div class="row">
-          <label for="sensitivity">Pinch sensitivity <span id="sensVal">0.06</span></label>
-          <input id="sensitivity" type="range" min="0.02" max="0.12" step="0.005" value="0.06" />
+          <label for="sensitivity">Pinch sensitivity <span id="sensVal">0.080</span></label>
+          <input id="sensitivity" type="range" min="0.02" max="0.18" step="0.005" value="0.080" />
         </div>
         <div class="row">
           <label for="smoothing">Pointer smoothing <span id="smoothVal">0.6</span></label>
@@ -134,9 +124,8 @@
     </section>
   </div>
 
-  <!-- Primary: MediaPipe Tasks Vision (pinned) -->
+  <!-- MediaPipe Tasks Vision -->
   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14"></script>
-  <!-- Fallback: other CDN if the above didn’t load -->
   <script>
     if (!window.HandLandmarker || !window.FilesetResolver) {
       const s = document.createElement('script');
@@ -144,297 +133,9 @@
       document.head.appendChild(s);
     }
   </script>
-  <!-- Legacy fallback: MediaPipe Hands (no extra camera stream) -->
   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.min.js"></script>
-
-  <script>
-    // Elements
-    const video = document.getElementById('video');
-    const overlay = document.getElementById('overlay');
-    const paint = document.getElementById('paint');
-    const cursor = document.getElementById('cursor');
-    const statusEl = document.getElementById('status');
-    const toast = document.getElementById('toast');
-
-    const colorEl = document.getElementById('color');
-    const sizeEl = document.getElementById('size');
-    const sizeVal = document.getElementById('sizeVal');
-    const sensEl = document.getElementById('sensitivity');
-    const sensVal = document.getElementById('sensVal');
-    const smoothingEl = document.getElementById('smoothing');
-    const smoothVal = document.getElementById('smoothVal');
-
-    const clearBtn = document.getElementById('clearBtn');
-    const saveBtn = document.getElementById('saveBtn');
-    const undoBtn = document.getElementById('undoBtn');
-    const redoBtn = document.getElementById('redoBtn');
-    const cameraSelect = document.getElementById('cameraSelect');
-    const toggleGuidesBtn = document.getElementById('toggleGuides');
-    const togglePointerBtn = document.getElementById('togglePointer');
-    const runTestsBtn = document.getElementById('runTests');
-
-    const startBtn = document.getElementById('startBtn');
-    const gate = document.getElementById('gate');
-    const gateStart = document.getElementById('gateStart');
-    const gateDismiss = document.getElementById('gateDismiss');
-    const secureNote = document.getElementById('secureNote')?.querySelector('span');
-
-    const isSecureEl = document.getElementById('isSecure');
-    const permEl = document.getElementById('perm');
-    const facingEl = document.getElementById('facing');
-
-    const tracker = document.getElementById('tracker');
-    const tctx = tracker.getContext('2d');
-
-    // State
-    let showGuides = true;
-    let showPointer = true;
-
-    let ctxPaint = paint.getContext('2d');
-    let ctxOver = overlay.getContext('2d');
-
-    let handLandmarker = null; // Tasks Vision
-    let legacyHands = null;    // Legacy Hands fallback
-    let legacyLandmarks = null;
-    let legacyBusy = false;
-    let lastLegacyTime = -1;
-
-    let lastVideoTime = -1;
-    let running = false;
-    let streamRef = null;
-    let currentFacing = 'user';
-
-    let drawing = false;
-    let lastPt = null; // {x,y}
-    let smoothed = null;
-
-    let history = [];
-    let redoStack = [];
-
-    // Utils
-    function toastMsg(msg) {
-      statusEl.textContent = msg;
-      toast.textContent = msg;
-      toast.className = 'toast show';
-      setTimeout(() => { toast.className = 'toast'; }, 2000);
-    }
-    function hideGate(){ gate.style.display='none'; gate.style.pointerEvents='none'; }
-    function showGate(){ gate.style.display='grid'; gate.style.background='transparent'; gate.style.pointerEvents='auto'; }
-
-    function pushHistory() { try { history.push(paint.toDataURL('image/png')); if (history.length > 40) history.shift(); redoStack.length = 0; } catch(e) {} }
-    function restoreFrom(dataUrl) { return new Promise(resolve => { const img = new Image(); img.onload = () => { ctxPaint.clearRect(0,0,paint.width,paint.height); ctxPaint.drawImage(img,0,0,paint.width,paint.height); resolve(); }; img.src = dataUrl; }); }
-
-    undoBtn.onclick = async () => { if (!history.length) return; const last = history.pop(); const current = paint.toDataURL('image/png'); redoStack.push(current); await restoreFrom(last); };
-    redoBtn.onclick = async () => { if (!redoStack.length) return; const next = redoStack.pop(); const current = paint.toDataURL('image/png'); history.push(current); await restoreFrom(next); };
-    clearBtn.onclick = () => { ctxPaint.clearRect(0,0,paint.width,paint.height); pushHistory(); };
-    saveBtn.onclick = () => { const a = document.createElement('a'); a.download = 'pinch-drawing.png'; a.href = paint.toDataURL('image/png'); a.click(); };
-
-    toggleGuidesBtn.onclick = () => { showGuides = !showGuides; };
-    togglePointerBtn.onclick = () => { showPointer = !showPointer; cursor.style.opacity = showPointer ? 1 : 0; };
-
-    sizeEl.oninput = () => sizeVal.textContent = sizeEl.value;
-    sensEl.oninput = () => sensVal.textContent = Number(sensEl.value).toFixed(3);
-    smoothingEl.oninput = () => smoothVal.textContent = Number(smoothingEl.value).toFixed(2);
-
-    cameraSelect.onchange = async () => {
-      const val = cameraSelect.value;
-      if (val === currentFacing) return;
-      currentFacing = val;
-      await initCamera(true);
-    };
-    startBtn.onclick = () => initCamera(false);
-    gateStart.onclick = () => initCamera(false);
-    gateDismiss.onclick = () => hideGate();
-
-    function fitCanvases() {
-      const rect = video.getBoundingClientRect();
-      const w = video.videoWidth || rect.width;
-      const h = video.videoHeight || rect.height;
-      for (const c of [overlay, paint]) {
-        const ratio = window.devicePixelRatio || 1;
-        c.width = w*ratio; c.height = h*ratio;
-        c.style.width='100%'; c.style.height='100%';
-        const ctx = c.getContext('2d');
-        ctx.setTransform(ratio,0,0,ratio,0,0);
-      }
-    }
-
-    async function initCamera(forceRestart = false) {
-      const secure = window.isSecureContext || location.hostname === 'localhost';
-      try {
-        if (!secure) { showGate(); toastMsg('Use HTTPS or localhost.'); return; }
-        if (!streamRef || forceRestart) {
-          if (streamRef) { streamRef.getTracks().forEach(t => t.stop()); streamRef = null; }
-          const facingMode = currentFacing;
-          facingEl && (facingEl.textContent = facingMode);
-          const constraints = { video: { facingMode, width: { ideal: 1280 }, height: { ideal: 720 } }, audio: false };
-          const stream = await navigator.mediaDevices.getUserMedia(constraints);
-          streamRef = stream; video.srcObject = streamRef;
-          await video.play();
-          await new Promise(r => { if (video.readyState >= 2) r(); else video.onloadedmetadata = () => r(); });
-          fitCanvases(); hideGate(); statusEl.textContent = 'Camera ready';
-        } else { hideGate(); }
-
-        if (!handLandmarker && !legacyHands) {
-          try { await setupHandsWithFallback(); statusEl.textContent = 'Tracker ready'; }
-          catch(e){ console.warn('Tasks-Vision failed, switching to legacy:', e); toastMsg('Modern tracker blocked. Using fallback.'); await setupLegacyHands(); statusEl.textContent = 'Legacy tracker ready'; }
-        }
-
-        setTimeout(()=> statusEl.textContent = 'Ready', 300);
-        running = true; requestAnimationFrame(loop);
-      } catch (err) {
-        console.error(err);
-        let message = 'Camera failed.';
-        if (err && err.name === 'NotAllowedError') message = 'Permission denied. Allow the camera.';
-        if (err && err.name === 'NotFoundError') message = 'No camera found.';
-        if (err && err.name === 'NotReadableError') message = 'Camera already in use.';
-        toastMsg(message); showGate();
-      }
-    }
-
-    const BONES=[[0,1],[1,2],[2,3],[3,4],[0,5],[5,6],[6,7],[7,8],[0,9],[9,10],[10,11],[11,12],[0,13],[13,14],[14,15],[15,16],[0,17],[17,18],[18,19],[19,20]];
-    function vecDist(a,b){const dx=a.x-b.x;const dy=a.y-b.y;return Math.hypot(dx,dy)}
-    function drawLine(a,b){ ctxPaint.strokeStyle=colorEl.value; ctxPaint.lineWidth=Number(sizeEl.value); ctxPaint.lineCap='round'; ctxPaint.lineJoin='round'; ctxPaint.beginPath(); ctxPaint.moveTo(a.x,a.y); ctxPaint.lineTo(b.x,b.y); ctxPaint.stroke(); }
-    function projectToCanvas(norm,w,h){ const x=norm.x*w; const y=norm.y*h; return {x,y}; }
-
-    function drawSkeleton(ctx, w, h, L, mirrored = true) {
-    ctx.clearRect(0, 0, w, h);
-    if (!L) return;
-    ctx.save();
-    const scale = 0.8; // adjust to make skeleton smaller/larger
-    const yOffset = 0.15; // lower skeleton vertically (0.05 = 5% of height)
-    ctx.lineWidth = 2;
-    ctx.strokeStyle = 'rgba(255,255,255,.9)';
-    ctx.fillStyle = 'rgba(255,255,255,.95)';
-    ctx.beginPath();
-    
-    // Find center of hand for scaling
-    let cx = 0, cy = 0;
-    for (const p of L) { cx += p.x; cy += p.y; }
-    cx /= L.length; cy /= L.length;
-
-    for (const [a, b] of BONES) {
-        const p1 = {
-        x: ((mirrored ? 1 - L[a].x : L[a].x) - (mirrored ? 1 - cx : cx)) * scale + (mirrored ? 1 - cx : cx),
-        y: ((L[a].y - cy) * scale + cy) + yOffset
-        };
-        const p2 = {
-        x: ((mirrored ? 1 - L[b].x : L[b].x) - (mirrored ? 1 - cx : cx)) * scale + (mirrored ? 1 - cx : cx),
-        y: ((L[b].y - cy) * scale + cy) + yOffset
-        };
-        ctx.moveTo(p1.x * w, p1.y * h);
-        ctx.lineTo(p2.x * w, p2.y * h);
-    }
-    ctx.stroke();
-    for (const p of L) {
-        const x = (((mirrored ? 1 - p.x : p.x) - (mirrored ? 1 - cx : cx)) * scale + (mirrored ? 1 - cx : cx)) * w;
-        const y = (((p.y - cy) * scale + cy) + yOffset) * h;
-        ctx.beginPath();
-        ctx.arc(x, y, 3, 0, Math.PI * 2);
-        ctx.fill();
-    }
-    ctx.restore();
-    }
   
-    async function setupHandsWithFallback(){
-      const versions=['0.10.14','latest'];
-      const cdns=['https://cdn.jsdelivr.net/npm','https://unpkg.com'];
-      let lastErr=null;
-      for(const ver of versions){
-        for(const cdn of cdns){
-          try{
-            if(!window.HandLandmarker||!window.FilesetResolver){ await new Promise((resolve)=>{ const s=document.createElement('script'); s.src=`${cdn}/@mediapipe/tasks-vision@${ver}`; s.onload=resolve; s.onerror=resolve; document.head.appendChild(s); }); }
-            const FilesetResolver=window.FilesetResolver; const HandLandmarker=window.HandLandmarker;
-            if(!FilesetResolver||!HandLandmarker) { lastErr = new Error('Tasks Vision globals missing'); continue; }
-            const base=`${cdn}/@mediapipe/tasks-vision@${ver}/wasm`;
-            const files=await FilesetResolver.forVisionTasks(base);
-            handLandmarker=await HandLandmarker.createFromOptions(files,{ baseOptions:{ modelAssetPath:`${base}/hand_landmarker.task` }, runningMode:'VIDEO', numHands:1, minHandDetectionConfidence:0.5, minHandPresenceConfidence:0.5, minTrackingConfidence:0.5 });
-            return;
-          }catch(e){ lastErr=e; }
-        }
-      }
-      if (lastErr) throw lastErr; throw new Error('Failed to initialize Tasks-Vision');
-    }
-
-    async function setupLegacyHands(){
-      return new Promise((resolve, reject)=>{
-        try{
-          legacyHands = new Hands({ locateFile: (file)=>`https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}` });
-          legacyHands.setOptions({ maxNumHands: 1, modelComplexity: 1, minDetectionConfidence: 0.5, minTrackingConfidence: 0.5 });
-          legacyHands.onResults((res)=>{ legacyLandmarks = res.multiHandLandmarks && res.multiHandLandmarks[0] ? res.multiHandLandmarks[0].map(p=>({x:p.x,y:p.y})) : null; });
-          resolve();
-        }catch(e){ reject(e); }
-      });
-    }
-
-    function renderGuides(landmarks,w,h){ ctxOver.clearRect(0,0,overlay.width,overlay.height); if(!landmarks) return; if(showGuides){ drawSkeleton(ctxOver,w,h,landmarks,true); } }
-    function updateCursor(pt){ if(!showPointer) return; cursor.style.left=pt.x+'px'; cursor.style.top=pt.y+'px'; cursor.style.opacity=1; }
-
-    async function loop(){
-      const w = paint.width / (window.devicePixelRatio || 1);
-      const h = paint.height / (window.devicePixelRatio || 1);
-
-      let L=null;
-      if(running && handLandmarker){
-        const now=performance.now();
-        if(video.currentTime!==lastVideoTime){ lastVideoTime=video.currentTime; const res=handLandmarker.detectForVideo(video,now); if(res&&res.landmarks&&res.landmarks[0]) L=res.landmarks[0]; }
-      } else if (running && legacyHands){
-        if (!legacyBusy && video.currentTime !== lastLegacyTime) {
-          lastLegacyTime = video.currentTime; legacyBusy = true; legacyHands.send({ image: video }).catch(()=>{}).finally(()=>{ legacyBusy = false; });
-        }
-        L = legacyLandmarks;
-      }
-
-      drawSkeleton(tctx, tracker.width, tracker.height, L, true);
-
-      if(L){
-        const thumb=L[4]; const indexTip=L[8]; const pinchDist=vecDist(thumb,indexTip); const threshold=Number(sensEl.value);
-        // project and apply user-adjustable Y offset in CSS pixels
-        const pt=projectToCanvas(indexTip,w,h);
-        const builtInBias = 10; // pixels
-        pt.y += 80;
-        const alpha=Number(smoothingEl.value);
-        if(!smoothed) smoothed={...pt};
-        smoothed.x=smoothed.x*alpha+pt.x*(1-alpha);
-        smoothed.y=smoothed.y*alpha+pt.y*(1-alpha);
-        updateCursor(smoothed); renderGuides(L,w,h);
-        const pinch=pinchDist<threshold;
-        if(pinch && !drawing){ drawing=true; lastPt={...smoothed}; pushHistory(); }
-        if(!pinch && drawing){ drawing=false; lastPt=null; }
-        if(drawing){ if(lastPt) drawLine(lastPt,smoothed); lastPt={...smoothed}; }
-      } else {
-        ctxOver.clearRect(0,0,overlay.width,overlay.height); drawing=false; lastPt=null; cursor.style.opacity=0;
-      }
-
-      requestAnimationFrame(loop);
-    }
-
-    window.addEventListener('resize', fitCanvases);
-
-    // Start behavior
-    document.addEventListener('DOMContentLoaded', async () => {
-      try {
-        const perm = await navigator.permissions?.query({ name: 'camera' });
-        if (perm && perm.state === 'granted') { await initCamera(false); }
-        else { showGate(); statusEl.textContent = 'Click Start camera'; }
-      } catch { showGate(); }
-    });
-
-    // Tests
-    function approxEqual(a,b,eps=1e-6){return Math.abs(a-b)<=eps}
-    function runUnitTests(){
-      const results=[]; const W=1920,H=1080;
-      results.push({name:'vecDist zero',pass:approxEqual(vecDist({x:0,y:0},{x:0,y:0}),0)});
-      results.push({name:'vecDist diag',pass:approxEqual(vecDist({x:0,y:0},{x:3,y:4}),5)});
-      const pMid=projectToCanvas({x:0.5,y:0.5},W,H);
-      results.push({name:'project mid x',pass:approxEqual(pMid.x,W*0.5)});
-      results.push({name:'project mid y',pass:approxEqual(pMid.y,H*0.5)});
-      let s={x:0,y:0}; const alpha=0.6; const target={x:10,y:0}; s.x=s.x*alpha+target.x*(1-alpha); results.push({name:'smoothing moves toward target',pass:s.x>3.5 && s.x<4.5});
-      const thumb={x:0.5, y:0.5}; const indexNear={x:0.52,y:0.5}; const indexFar={x:0.8, y:0.5}; const near=vecDist(thumb,indexNear); const far=vecDist(thumb,indexFar); const thresh=Number(document.getElementById('sensitivity').value);
-      results.push({name:'pinch near below threshold',pass:near<thresh}); results.push({name:'pinch far above threshold',pass:far>thresh});
-      const passed = results.filter(r=>r.pass).length; console.table(results); toastMsg(`Tests ${passed}/${results.length}`); return results;
-    }
-    document.getElementById('runTests').onclick = runUnitTests;
-  </script>
+  <!-- App JavaScript -->
+  <script src="app.js"></script>
 </body>
 </html>
