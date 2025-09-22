@@ -202,7 +202,7 @@ function renderGuides(landmarks,w,h){
   if(!landmarks || !showGuides) return;
   drawSkeleton(ctxOver,w,h,landmarks);
 }
-function updateCursor(pt){ if(!showPointer) return; cursor.style.left=pt.x+'px'; cursor.style.top=pt.y+'px'; cursor.style.opacity=1; }
+function updateCursor(pt){ if(!showPointer) return; const w = paint.width / (window.devicePixelRatio || 1); cursor.style.left=(w - pt.x + 380)+'px'; cursor.style.top=pt.y+'px'; cursor.style.opacity=1; }
 
 async function setupHandsWithFallback(){
   const versions=['0.10.14','latest'];

@@ -9,7 +9,6 @@ header .right{display:flex;gap:8px;align-items:center}
 
 .surface{position:relative;width:100%;height:100%;overflow:hidden;background:#000}
 
-/* Host box for video + overlay canvases, centered at 70% width */
 .mirror{
   position:absolute; inset:0;
   width:70%; height:100%;
@@ -18,7 +17,6 @@ header .right{display:flex;gap:8px;align-items:center}
   transform:scaleX(-1);         /* flip video and overlays together */
 }
 
-/* Children fill the mirror box exactly */
 video, canvas{width:100%;height:100%;object-fit:cover}
 
 #video{filter:none !important;background:transparent !important}
